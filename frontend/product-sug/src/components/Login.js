@@ -1,0 +1,46 @@
+import React, { useState } from 'react';
+import { useHistory } from 'react-router-dom';
+import { login } from '../services/api';
+
+const Login = () => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const history = useHistory();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      const response = await login({ username, password });
+      localStorage.setItem('token', response.token); // Save token to localStorage
+      history.push('/profile'); // Redirect to user profile page
+    } catch (error) {
+      setError('Invalid credentials');
+    }
+  };
+
+  return (
+    <div>
+      <h2>Login</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        {error && <p>{error}</p>}
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  );
+};
+
+export default Login;
