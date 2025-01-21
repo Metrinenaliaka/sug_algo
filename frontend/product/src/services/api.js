@@ -23,15 +23,26 @@ api.interceptors.request.use((config) => {
 });
 
 // Sign up a new user
-export const signup = async (data) => {
-  const response = await api.post('/signup/', data);
-  return response.data;
+export const signup = async (userData) => {
+  const response = await axios.post('http://127.0.0.1:8000/api/signup/', userData);
+  return response.data;  // Returning the response message or data from the backend
 };
-
+axios.defaults.withCredentials = true;
+axios.interceptors.request.use((config) => {
+  const token = document.cookie.match(/csrftoken=([^;]+)/)?.[1];  // Get CSRF token from cookie
+  if (token) {
+    config.headers['X-CSRFToken'] = token;  // Add CSRF token to request headers
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
 // Login an existing user
-export const login = async (data) => {
-  const response = await api.post('/login/', data);
-  return response.data;
+export const login = async (userData) => {
+  const response = await axios.post('http://127.0.0.1:8000/api/login/', userData, {
+    withCredentials: true, // Send cookies with the request for session management
+  });
+  return response.data;  // Returning the response message or data from the backend
 };
 
 // Fetch user profile (including preferences)

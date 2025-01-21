@@ -41,7 +41,7 @@ class Product(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.name
+        return self.product_name
 
 
 # Interaction model to track user interactions with products (like, dislike, view)

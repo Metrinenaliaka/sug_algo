@@ -14,7 +14,7 @@ const Login = () => {
     try {
       const response = await login({ username, password });
       localStorage.setItem('token', response.token); // Save token to localStorage
-      navigate('/profile'); // Redirect to user profile page
+      navigate('/'); // Redirect to user profile page
     } catch (error) {
       setError('Invalid credentials');
     }
