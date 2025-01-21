@@ -32,11 +32,10 @@ class Product(models.Model):
         ('accessory', 'Accessory')
     ]
     
-    name = models.CharField(max_length=255)
+    
     product_name = models.CharField(max_length=255, choices=PRODUCT_TYPES)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     image = models.ImageField(upload_to='product_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

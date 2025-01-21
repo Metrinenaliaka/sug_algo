@@ -1,29 +1,37 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { login } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { signup } from '../services/api';
 
-const Login = () => {
+const Signup = () => {
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      const response = await login({ username, password });
-      localStorage.setItem('token', response.token); // Save token to localStorage
-      history.push('/profile'); // Redirect to user profile page
+      const response = await signup({ email, username, password });
+      if (response) {
+        navigate('/login'); // Redirect to login page after successful signup
+      }
     } catch (error) {
-      setError('Invalid credentials');
+      setError('Failed to sign up. Please try again.');
     }
   };
 
   return (
     <div>
-      <h2>Login</h2>
+      <h2>Sign Up</h2>
       <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
         <input
           type="text"
           placeholder="Username"
@@ -37,10 +45,10 @@ const Login = () => {
           onChange={(e) => setPassword(e.target.value)}
         />
         {error && <p>{error}</p>}
-        <button type="submit">Login</button>
+        <button type="submit">Sign Up</button>
       </form>
     </div>
   );
 };
 
-export default Login;
+export default Signup;

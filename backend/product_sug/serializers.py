@@ -5,7 +5,7 @@ from .models import Product, Interaction, UserPreferences
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'name', 'product_name', 'category', 'description', 'price', 'image', 'created_at', 'updated_at']
+        fields = ['id', 'product_name', 'category', 'description', 'image', 'created_at', 'updated_at']
 
 
 class InteractionSerializer(serializers.ModelSerializer):

@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Product, Interaction, UserPreferences
+from .models import Product, Interaction, UserPreferences, CustomUser
 from .serializers import ProductSerializer, InteractionSerializer, UserPreferencesSerializer
 from .utils import update_user_preferences
 
