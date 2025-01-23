@@ -11,8 +11,21 @@ const Home = () => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await axios.get('http://127.0.0.1:8000/api/products/');
-        console.log(response.data);  // Log the whole response to see its structure
+        // Get the token from localStorage
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          throw new Error('Token is missing');
+        }
+
+        // Send the token in the Authorization header
+        const response = await axios.get('http://127.0.0.1:8000/api/products/', {
+          headers: {
+            'Authorization': `Token ${token}`,  // Include token in the header
+          },
+        });
+
+        console.log(response.data);  // Log the response to see its structure
         setProducts(response.data);  // If the products are in the root of the response
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -25,29 +38,35 @@ const Home = () => {
   }, []);
 
   // Handle like and dislike interactions
-  // Home.js or wherever you're making the request
-const handleInteraction = async (productId, interactionType) => {
-  try {
-    const response = await axios.post('http://127.0.0.1:8000/api/user_interaction/', {
-      product_id: productId,
-      interaction_type: interactionType
-    }, {
-      withCredentials: true,  // This ensures the session cookie is sent with the request
-    });
+  const handleInteraction = async (productId, interactionType) => {
+    try {
+      // Get the token from localStorage
+      const token = localStorage.getItem('token');
 
-    console.log(response.data);
-  } catch (error) {
-    console.error('Error interacting with product:', error.response ? error.response.data : error);
-  }
-};
+      if (!token) {
+        throw new Error('Token is missing');
+      }
 
-  
+      // Send the token in the Authorization header
+      const response = await axios.post('http://127.0.0.1:8000/api/user_interaction/', {
+        product_id: productId,
+        interaction_type: interactionType,
+      }, {
+        headers: {
+          'Authorization': `Token ${token}`,  // Include token in the header
+        },
+      });
+
+      console.log(response.data);
+    } catch (error) {
+      console.error('Error interacting with product:', error.response ? error.response.data : error);
+    }
+  };
 
   return (
     <div>
       <UserProfile setUsername={setUsername} />
       <h2>Product List</h2>
-      
 
       {/* Product List */}
       {loading ? (

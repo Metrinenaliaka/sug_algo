@@ -17,41 +17,50 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = getToken();
   if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Sign up a new user
-export const signup = async (userData) => {
-  const response = await axios.post('http://127.0.0.1:8000/api/signup/', userData);
-  return response.data;  // Returning the response message or data from the backend
-};
-axios.defaults.withCredentials = true;
-axios.interceptors.request.use((config) => {
-  const token = document.cookie.match(/csrftoken=([^;]+)/)?.[1];  // Get CSRF token from cookie
-  if (token) {
-    config.headers['X-CSRFToken'] = token;  // Add CSRF token to request headers
+    config.headers['Authorization'] = `Token ${token}`; // Add the token to the header if available
   }
   return config;
 }, (error) => {
   return Promise.reject(error);
 });
-// Login an existing user
-export const login = async (userData) => {
-  const response = await axios.post('http://127.0.0.1:8000/api/login/', userData, {
-    withCredentials: true, // Send cookies with the request for session management
-  });
+
+// Sign up a new user (does not need authentication token)
+export const signup = async (userData) => {
+  const response = await axios.post('http://127.0.0.1:8000/api/signup/', userData);
   return response.data;  // Returning the response message or data from the backend
 };
 
-// Fetch user profile (including preferences)
+// Set token only for requests that require authentication
+export const setAuthHeader = (token) => {
+  api.defaults.headers['Authorization'] = `Token ${token}`; // Set the Authorization header for this request
+};
+
+// Remove the token from the headers when logging out or when not needed
+export const removeAuthHeader = () => {
+  delete api.defaults.headers['Authorization'];  // Remove the token from the header
+};
+
+// Login an existing user (get token and set it for future authenticated requests)
+export const login = async (userData) => {
+  const response = await axios.post('http://127.0.0.1:8000/api/token-auth/', userData);
+  
+  // Assuming the response contains the token, store it in localStorage
+  const token = response.data.token;
+  localStorage.setItem('token', token);
+  
+  // Set the token for authenticated requests
+  setAuthHeader(token);
+
+  return response.data;  // Returning the response message or data from the backend
+};
+
+// Fetch user profile (including preferences) - protected route
 export const getUserProfile = async () => {
   const response = await api.get('/user_profile/');
   return response.data;
 };
 
-// Fetch recommended products based on user preferences
+// Fetch recommended products based on user preferences - protected route
 export const getProductRecommendations = async () => {
   const response = await api.get('/product_recommendations/');
   return response.data;

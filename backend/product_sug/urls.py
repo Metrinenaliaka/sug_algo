@@ -1,6 +1,8 @@
 from django.urls import path
+
 from .views import ProductUploadView, UserInteractionView, \
-    ProductRecommendationView, ProductListView, SignupView, LoginView, CurrentUserView
+    ProductRecommendationView, ProductListView, SignupView, LoginView, \
+        CurrentUserView, UserProfileView
 
 urlpatterns = [
     path('upload_product/', ProductUploadView.as_view(), name='upload_product'),
@@ -10,4 +12,6 @@ urlpatterns = [
     path('signup/', SignupView.as_view(), name='signup'),
     path('login/', LoginView.as_view(), name='login'),
     path('current_user/', CurrentUserView.as_view(), name='current-user'),
+    path('user_profile/', UserProfileView.as_view(), name='user-profile'),
+    
 ]

@@ -44,18 +44,23 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_filters',
+    'rest_framework.authtoken',
 ]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',  # Explicitly set session authentication
+        'rest_framework.authentication.TokenAuthentication',  # Explicitly set session authentication
     ],
 }
 
 CSRF_COOKIE_NAME = "csrftoken"  # Django uses 'csrftoken' by default for CSRF cookie
 CORS_ALLOW_CREDENTIALS = True  # Allow credentials (cookies) to be sent
+CSRF_COOKIE_HTTPONLY = False
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Frontend URL (make sure this matches the frontend URL)
+]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",  # Add your frontend origin here
 ]
 
 
@@ -64,7 +69,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

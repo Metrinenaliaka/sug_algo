@@ -38,3 +38,10 @@ class UserPreferencesSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPreferences
         fields = ['user', 'preferred_product_type', 'preferred_description', 'interaction_count', 'created_at', 'updated_at']
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    preferences = UserPreferencesSerializer(many=True)  # Include user preferences in the profile
+
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'email', 'preferences']  # Include other fields if needed

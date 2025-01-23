@@ -4,49 +4,65 @@ from rest_framework.response import Response
 from rest_framework import status, generics
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
-
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Product, Interaction, UserPreferences, CustomUser
 from rest_framework.pagination import PageNumberPagination
-from .serializers import ProductSerializer, InteractionSerializer, UserPreferencesSerializer, CustomUserSerializer
+from .serializers import ProductSerializer, InteractionSerializer, \
+    UserPreferencesSerializer, CustomUserSerializer
 from .utils import update_user_preferences
 from rest_framework.permissions import IsAuthenticated
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
+from product_sug.recommendations.collaborative import recommend_products_cf
+from .recommendations.content import recommend_products_cb
 
 class CurrentUserView(APIView):
+    authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
 
     def get(self, request):
         # Return user data
         user = request.user
+        print(request.user)
         return Response({
             "username": user.username,
             "email": user.email
         })
 
 class SignupView(APIView):
+    @csrf_exempt
     def post(self, request):
         serializer = CustomUserSerializer(data=request.data)
 
         if serializer.is_valid():
-            serializer.save()  # Create the user
-            return Response({"message": "User created successfully!"}, status=status.HTTP_201_CREATED)
+            user = serializer.save()  # Create the user
+            token = Token.objects.get(user=user)
+            return Response({
+                "message": "User created successfully!",
+                "token": token.key  # Return the token here
+            }, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class LoginView(APIView):
+    @csrf_exempt
     def post(self, request):
         # Get the username and password from the request data
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
 
         # Authenticate the user using Django's authentication system
-        user = authenticate(username=username, password=password)
+        user = authenticate(email=email, password=password)
 
         if user is not None:
             # Log the user in using Django's session system
-            login(request, user)
-
-            return Response({"message": "Login successful"}, status=status.HTTP_200_OK)
+            token, created = Token.objects.get_or_create(user=user)  # Create or get the token
+            return Response({
+                "message": "Login successful",
+                "token": token.key  # Return the token in the response
+            }, status=status.HTTP_200_OK)
         
         return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -159,3 +175,26 @@ class ProductRecommendationView(APIView):
         
         return Response({"message": "No preferences found for this user."}, status=status.HTTP_404_NOT_FOUND)
 
+class UserProfileView(APIView):
+    authentication_classes = [TokenAuthentication]  # Ensure the user is authenticated via token
+    permission_classes = [IsAuthenticated]  # Only authenticated users can access their profile
+
+    def get(self, request):
+        user = request.user  # The authenticated user from the token
+        
+        # Manually prepare user data
+        user_data = {
+            "username": user.username,
+            "email": user.email,
+        }
+        
+        # Fetch related preferences for the user
+        preferences = UserPreferences.objects.filter(user=user)
+        
+        # Serialize the user preferences using the UserPreferencesSerializer
+        preferences_data = UserPreferencesSerializer(preferences, many=True).data
+        
+        # Add the preferences data to the user_data dictionary
+        user_data['preferences'] = preferences_data
+        
+        return Response(user_data)
