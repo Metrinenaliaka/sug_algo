@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login
 from rest_framework.response import Response
 from rest_framework import status, generics
 import django_filters
+from django.http import JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
@@ -14,8 +15,9 @@ from .serializers import ProductSerializer, InteractionSerializer, \
 from .utils import update_user_preferences
 from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.decorators import api_view
-from product_sug.recommendations.collaborative import recommend_products_cf
+import sqlite3
+import pandas as pd
+from product_sug.recommendations.collaborative import recommend_products_cf, train_collaborative_filtering
 from .recommendations.content import recommend_products_cb
 
 class CurrentUserView(APIView):
@@ -50,18 +52,19 @@ class LoginView(APIView):
     @csrf_exempt
     def post(self, request):
         # Get the username and password from the request data
-        email = request.data.get('email')
+        username = request.data.get('username')
         password = request.data.get('password')
 
         # Authenticate the user using Django's authentication system
-        user = authenticate(email=email, password=password)
+        user = authenticate(username=username, password=password)
 
         if user is not None:
             # Log the user in using Django's session system
             token, created = Token.objects.get_or_create(user=user)  # Create or get the token
             return Response({
                 "message": "Login successful",
-                "token": token.key  # Return the token in the response
+                "token": token.key,
+                "user_id": user.id
             }, status=status.HTTP_200_OK)
         
         return Response({"error": "Invalid credentials"}, status=status.HTTP_400_BAD_REQUEST)
@@ -159,21 +162,33 @@ class UserInteractionView(APIView):
 
 # View to get product recommendations for a user
 class ProductRecommendationView(APIView):
+    # permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
     def get(self, request, user_id):
-        # Fetch user preferences
-        user = CustomUser.objects.get(id=user_id)
-        preferences = UserPreferences.objects.filter(user=user)
+        # Step 1: Get the 'top_n' parameter from the request, default to 5
+        top_n = 5
+        user_id = int(request.GET.get("user_id", user_id))
         
-        if preferences.exists():
-            # Get the top recommended products based on user's preferences
-            preferred_type = preferences.first().preferred_product_type
-            preferred_description = preferences.first().preferred_description
+        # Step 2: Connect to the SQLite database
+        interactions = Interaction.objects.all().values('user__id', 'product__id', 'interaction_count')
+        products = Product.objects.all().values('id', 'product_name', 'description', 'category')
 
-            recommended_products = Product.objects.filter(product_name=preferred_type, description=preferred_description)
-            serializer = ProductSerializer(recommended_products, many=True)
-            return Response(serializer.data)
+        # Convert to DataFrame
+        interactions_df = pd.DataFrame(list(interactions))
+        print("interaction df", interactions_df)
+        products_df = pd.DataFrame(list(products))
+        # Step 4: Train the collaborative filtering model using the interactions DataFrame
+        algo = train_collaborative_filtering(interactions_df)
+
+        # Step 5: Generate hybrid recommendations for the user
+        recommendations = recommend_products_cf(user_id, interactions_df, algo, top_n)
+
+        # Step 6: Convert recommendations to (product_id, score) tuples, with int64 to int conversion
+        recommendations = [(int(product_id), float(score)) for product_id, score in recommendations]
+
         
-        return Response({"message": "No preferences found for this user."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Step 8: Return the recommendations as a JSON response
+        return JsonResponse({"recommendations": recommendations})
 
 class UserProfileView(APIView):
     authentication_classes = [TokenAuthentication]  # Ensure the user is authenticated via token

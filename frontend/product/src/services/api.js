@@ -42,11 +42,13 @@ export const removeAuthHeader = () => {
 
 // Login an existing user (get token and set it for future authenticated requests)
 export const login = async (userData) => {
-  const response = await axios.post('http://127.0.0.1:8000/api/token-auth/', userData);
+  const response = await axios.post('http://127.0.0.1:8000/api/login/', userData);
   
-  // Assuming the response contains the token, store it in localStorage
+  
   const token = response.data.token;
+  const user_id = response.data.user_id;
   localStorage.setItem('token', token);
+  localStorage.setItem('user_id', user_id);
   
   // Set the token for authenticated requests
   setAuthHeader(token);
@@ -61,8 +63,8 @@ export const getUserProfile = async () => {
 };
 
 // Fetch recommended products based on user preferences - protected route
-export const getProductRecommendations = async () => {
-  const response = await api.get('/product_recommendations/');
+export const getProductRecommendations = async (userId) => {
+  const response = await api.get(`/product_recommendations/${userId}/`);
   return response.data;
 };
 

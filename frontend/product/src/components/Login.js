@@ -13,7 +13,8 @@ const Login = () => {
     setError('');
     try {
       const response = await login({ username, password });
-      localStorage.setItem('token', response.token); // Save token to localStorage
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user_id', response.user_id);
       navigate('/'); // Redirect to user profile page
     } catch (error) {
       setError('Invalid credentials');

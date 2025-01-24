@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { getUserProfile, getProductRecommendations } from '../services/api';
-import ProductCard from './ProductCard';
+import { getUserProfile } from '../services/api';
+// import ProductCard from './ProductCard';
 
 const Profile = () => {
   const [userProfile, setUserProfile] = useState(null);
-  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  // const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -17,17 +17,18 @@ const Profile = () => {
       }
     };
 
-    const fetchRecommendations = async () => {
-      try {
-        const products = await getProductRecommendations();
-        setRecommendedProducts(products);
-      } catch (err) {
-        setError('Failed to load recommendations.');
-      }
-    };
+    // const fetchRecommendations = async () => {
+    //   try {
+    //     const userId = localStorage.getItem('user_id');
+    //     const products = await getProductRecommendations(userId);
+    //     setRecommendedProducts(products);
+    //   } catch (err) {
+    //     setError('Failed to load recommendations.');
+    //   }
+    // };
 
     fetchUserProfile();
-    fetchRecommendations();
+    // fetchRecommendations();
   }, []);
 
   return (
@@ -47,11 +48,11 @@ const Profile = () => {
           </ul>
 
           <h3>Recommended Products</h3>
-          <div>
+          {/* <div>
             {recommendedProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
-          </div>
+          </div> */}
         </div>
       ) : (
         <p>{error || 'Loading...'}</p>

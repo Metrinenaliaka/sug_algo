@@ -1,5 +1,6 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from product_sug.models import Product, UserPreferences
 
 def recommend_products_cb(user):
     preferences = UserPreferences.objects.filter(user=user)
