@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { getUserProfile } from '../services/api';
-// import ProductCard from './ProductCard';
+import { getUserProfile, getProductRecommendations } from '../services/api';
+import ProductCard from './ProductCard';
 
 const Profile = () => {
   const [userProfile, setUserProfile] = useState(null);
-  // const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [recommendedProducts, setRecommendedProducts] = useState([]); // Initialize as an empty array
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true); // Add loading state to handle async data fetching
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -17,19 +18,26 @@ const Profile = () => {
       }
     };
 
-    // const fetchRecommendations = async () => {
-    //   try {
-    //     const userId = localStorage.getItem('user_id');
-    //     const products = await getProductRecommendations(userId);
-    //     setRecommendedProducts(products);
-    //   } catch (err) {
-    //     setError('Failed to load recommendations.');
-    //   }
-    // };
+    const fetchRecommendations = async () => {
+      try {
+        const userId = localStorage.getItem('user_id');
+        const products = await getProductRecommendations(userId);
+        setRecommendedProducts(products);
+      } catch (err) {
+        setError('Failed to load recommendations.');
+      } finally {
+        setLoading(false); // Set loading to false after the async tasks finish
+      }
+    };
 
     fetchUserProfile();
-    // fetchRecommendations();
+    fetchRecommendations();
   }, []);
+
+  // Handle loading and error states before rendering the main content
+  if (loading) {
+    return <p>Loading...</p>; // Show loading message
+  }
 
   return (
     <div>
@@ -42,20 +50,28 @@ const Profile = () => {
 
           <h3>Liked Products</h3>
           <ul>
-            {userProfile.liked_products.map((product) => (
-              <li key={product.id}>{product.name}</li>
-            ))}
+            {userProfile.liked_products && userProfile.liked_products.length > 0 ? (
+              userProfile.liked_products.map((product) => (
+                <li key={product.id}>{product.name}</li>
+              ))
+            ) : (
+              <p>No liked products available.</p>
+            )}
           </ul>
 
           <h3>Recommended Products</h3>
-          {/* <div>
-            {recommendedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div> */}
+          <div>
+            {Array.isArray(recommendedProducts) && recommendedProducts.length > 0 ? (
+              recommendedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            ) : (
+              <p>No recommended products available.</p> // Handle empty recommended products
+            )}
+          </div>
         </div>
       ) : (
-        <p>{error || 'Loading...'}</p>
+        <p>{error || 'Loading profile...'}</p> // Fallback error message or loading message
       )}
     </div>
   );

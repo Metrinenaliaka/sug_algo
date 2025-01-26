@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login
 from rest_framework.response import Response
 from rest_framework import status, generics
 import django_filters
+from rest_framework.exceptions import NotFound
 from django.http import JsonResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.authentication import TokenAuthentication
@@ -15,9 +16,8 @@ from .serializers import ProductSerializer, InteractionSerializer, \
 from .utils import update_user_preferences
 from rest_framework.permissions import IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
-import sqlite3
 import pandas as pd
-from product_sug.recommendations.collaborative import recommend_products_cf, train_collaborative_filtering
+# from product_sug.recommendations.collaborative import recommend_products_cf, train_collaborative_filtering
 from .recommendations.content import recommend_products_cb
 
 class CurrentUserView(APIView):
@@ -161,35 +161,54 @@ class UserInteractionView(APIView):
 
 
 # View to get product recommendations for a user
+# class ProductRecommendationView(APIView):
+#     # permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+#     def get(self, request, user_id):
+#         # Step 1: Get the 'top_n' parameter from the request, default to 5
+#         top_n = 5
+#         user_id = int(request.GET.get("user_id", user_id))
+        
+#         # Step 2: Connect to the SQLite database
+#         interactions = Interaction.objects.all().values('user__id', 'product__id', 'interaction_count')
+#         products = Product.objects.all().values('id', 'product_name', 'description', 'category')
+
+#         # Convert to DataFrame
+#         interactions_df = pd.DataFrame(list(interactions))
+#         print("interaction df", interactions_df)
+#         products_df = pd.DataFrame(list(products))
+#         # Step 4: Train the collaborative filtering model using the interactions DataFrame
+#         algo = train_collaborative_filtering(interactions_df)
+
+#         # Step 5: Generate hybrid recommendations for the user
+#         recommendations = recommend_products_cf(user_id, interactions_df, algo, top_n)
+
+#         # Step 6: Convert recommendations to (product_id, score) tuples, with int64 to int conversion
+#         recommendations = [(int(product_id), float(score)) for product_id, score in recommendations]
+
+        
+
+#         # Step 8: Return the recommendations as a JSON response
+#         return JsonResponse({"recommendations": recommendations})
+
 class ProductRecommendationView(APIView):
-    # permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, user_id):
-        # Step 1: Get the 'top_n' parameter from the request, default to 5
-        top_n = 5
-        user_id = int(request.GET.get("user_id", user_id))
-        
-        # Step 2: Connect to the SQLite database
-        interactions = Interaction.objects.all().values('user__id', 'product__id', 'interaction_count')
-        products = Product.objects.all().values('id', 'product_name', 'description', 'category')
+        # Ensure the user_id matches the authenticated user
+        if request.user.id != user_id:
+            raise NotFound("User not found or not authorized to access this resource.")
 
-        # Convert to DataFrame
-        interactions_df = pd.DataFrame(list(interactions))
-        print("interaction df", interactions_df)
-        products_df = pd.DataFrame(list(products))
-        # Step 4: Train the collaborative filtering model using the interactions DataFrame
-        algo = train_collaborative_filtering(interactions_df)
+        # Call the recommendation function with the current user
+        recommended_product_indices = recommend_products_cb(request.user)
 
-        # Step 5: Generate hybrid recommendations for the user
-        recommendations = recommend_products_cf(user_id, interactions_df, algo, top_n)
+        # Get the recommended products based on the indices returned
+        recommended_products = Product.objects.filter(id__in=recommended_product_indices)
 
-        # Step 6: Convert recommendations to (product_id, score) tuples, with int64 to int conversion
-        recommendations = [(int(product_id), float(score)) for product_id, score in recommendations]
+        # Serialize the products
+        serializer = ProductSerializer(recommended_products, many=True)
 
-        
-
-        # Step 8: Return the recommendations as a JSON response
-        return JsonResponse({"recommendations": recommendations})
-
+        # Return the response with the serialized data
+        return Response(serializer.data)
 class UserProfileView(APIView):
     authentication_classes = [TokenAuthentication]  # Ensure the user is authenticated via token
     permission_classes = [IsAuthenticated]  # Only authenticated users can access their profile

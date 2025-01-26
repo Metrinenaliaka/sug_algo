@@ -16,6 +16,10 @@ def recommend_products_cb(user):
     
     similarities = cosine_similarity(product_vectors, product_vectors)
     
+    # Get the average cosine similarity for each product
+    avg_similarities = similarities.sum(axis=1) / similarities.shape[1]
+
     # Get top N most similar products
-    recommended_products = sorted(range(len(similarities)), key=lambda i: similarities[i], reverse=True)[:5]
-    return recommended_products
+    recommended_product_indices = avg_similarities.argsort()[::-1][:5]  # Sort by average similarity
+
+    return recommended_product_indices
