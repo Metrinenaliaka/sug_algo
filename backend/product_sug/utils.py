@@ -1,5 +1,7 @@
 from collections import defaultdict
-from .models import Interaction, UserPreferences
+
+from django.utils import timezone
+from .models import Interaction, UserPreferences, Product
 
 def update_user_preferences(user):
     """Update or create user preferences based on most interacted product types and descriptions."""
@@ -36,3 +38,16 @@ def update_user_preferences(user):
             print(f"New preference created for {user.username}: {preferred_product_type} - {preferred_description}")
         else:
             print(f"Preference updated for {user.username}: {preferred_product_type} - {preferred_description}")
+
+
+def delete_data_created_today():
+    # Get today's date at midnight (start of the day)
+    today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Filter the products created today
+    fake_data = Product.objects.filter(created_at__gte=today_start)
+    
+    # Delete the filtered products
+    deleted_count, _ = fake_data.delete()
+    
+    print(f"Deleted {deleted_count} product(s) created today.")
