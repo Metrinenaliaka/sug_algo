@@ -200,12 +200,14 @@ class ProductRecommendationView(APIView):
 
         # Call the recommendation function with the current user
         recommended_products = recommend_products_cb(request.user)
+        # print("recommended products", recommended_products)
 
         if not recommended_products:
             return Response({"message": "No recommendations available."}, status=200)
 
         # Serialize the recommended products to return as response
         product_data = ProductSerializer(recommended_products, many=True).data
+        # print("product data", product_data)
         return Response(product_data)
 class UserProfileView(APIView):
     authentication_classes = [TokenAuthentication]  # Ensure the user is authenticated via token
